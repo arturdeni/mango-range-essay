@@ -4,6 +4,8 @@ import './Range.css';
 interface RangeHandleProps {
   percent: number;
   value: number;
+  /** Human-readable value for screen readers (e.g. "20€"); falls back to `value`. */
+  valueText?: string;
   min: number;
   max: number;
   label: string;
@@ -17,6 +19,7 @@ interface RangeHandleProps {
 export function RangeHandle({
   percent,
   value,
+  valueText,
   min,
   max,
   label,
@@ -39,6 +42,7 @@ export function RangeHandle({
       aria-valuemin={min}
       aria-valuemax={max}
       aria-valuenow={value}
+      aria-valuetext={valueText}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}

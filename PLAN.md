@@ -54,9 +54,11 @@ lib/api/
 
 **RSC boundary**: `Range.tsx` y sus subcomponentes son Client Components (`'use client'`) porque manejan drag/estado; los Route Handlers permanecen 100% server-side. Esta separación evita mezclar lógica de servidor con interactividad de cliente.
 
+**Formateo de valores**: el enunciado muestra los valores en euros (`1€`, `5.99€`), pero el componente se mantiene agnóstico a la moneda. `Range` acepta un prop opcional `formatValue?: (value: number) => string`; cada página (`exercise1`/`exercise2`) pasa su propio formateador `(v) => \`${v}€\``. El formateo es puramente de presentación: afecta al texto del label y al `aria-valuetext` del handle, pero la edición del label sigue trabajando sobre el número crudo (`<input type="number">`), no sobre la cadena formateada. Así el `€` vive en la capa de página, no dentro del design-system component.
+
 ## 4. Accesibilidad
 
-- `role="slider"` + `aria-valuemin`/`aria-valuemax`/`aria-valuenow`/`aria-label` en cada handle.
+- `role="slider"` + `aria-valuemin`/`aria-valuemax`/`aria-valuenow`/`aria-label` en cada handle, más `aria-valuetext` con el valor formateado (`20€`) cuando se pasa `formatValue`, para que el lector de pantalla anuncie la moneda y no un número pelado.
 - Navegación con teclado (flechas) además del drag — no lo pide el enunciado explícitamente, pero un slider drag-only no es accesible.
 - Foco visible y contraste adecuado en los handles.
 
@@ -64,7 +66,7 @@ lib/api/
 
 - `valueMath.ts` → unit tests puros (clamping, no-cruce de valores, snapping a array fijo).
 - `useRangeDrag` / `useRangeKeyboard` → tests de comportamiento vía el componente.
-- `Range.tsx` → integration tests: arrastre simulado, edición de label, límites, no-cruce, fetch mockeado de los route handlers.
+- `Range.tsx` → integration tests: arrastre simulado, edición de label, límites, no-cruce, formateo de valores (`formatValue` → label + `aria-valuetext`, edición sobre el número crudo), fetch mockeado de los route handlers.
 - Route handlers → tests de la respuesta HTTP.
 
 ## 6. Orden de implementación

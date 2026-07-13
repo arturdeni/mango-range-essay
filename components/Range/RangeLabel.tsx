@@ -9,18 +9,29 @@ interface RangeLabelProps {
   min: number;
   max: number;
   editable?: boolean;
+  /** Formats the displayed value; editing still happens on the raw number. */
+  format?: (value: number) => string;
   ariaLabel: string;
   onCommit: (value: number) => void;
 }
 
-export function RangeLabel({ value, min, max, editable = true, ariaLabel, onCommit }: RangeLabelProps) {
+export function RangeLabel({
+  value,
+  min,
+  max,
+  editable = true,
+  format,
+  ariaLabel,
+  onCommit,
+}: RangeLabelProps) {
   const [isEditing, setIsEditing] = useState(false);
   // Escape cancels an edit; the flag lets the shared blur handler know it must
   // discard the input instead of committing it.
   const cancelledRef = useRef(false);
+  const display = format ? format(value) : value;
 
   if (!editable) {
-    return <span className="range__label">{value}</span>;
+    return <span className="range__label">{display}</span>;
   }
 
   if (!isEditing) {
@@ -31,7 +42,7 @@ export function RangeLabel({ value, min, max, editable = true, ariaLabel, onComm
         aria-label={ariaLabel}
         onClick={() => setIsEditing(true)}
       >
-        {value}
+        {display}
       </button>
     );
   }

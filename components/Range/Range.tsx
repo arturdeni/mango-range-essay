@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { RangeTrack } from './RangeTrack';
 import { RangeHandle } from './RangeHandle';
 import { RangeLabel } from './RangeLabel';
@@ -8,6 +9,9 @@ import { useRangeKeyboard } from './hooks/useRangeKeyboard';
 import { continuousScale, steppedScale, type RangeScale } from './lib/rangeScale';
 import './Range.css';
 
+/** Turns a numeric value into its display string (e.g. `(v) => `${v}€``). */
+type FormatValue = (value: number) => string;
+
 interface ContinuousRangeProps {
   mode?: 'continuous';
   min: number;
@@ -15,6 +19,7 @@ interface ContinuousRangeProps {
   step?: number;
   initialValues?: [number, number];
   editableLabels?: boolean;
+  formatValue?: FormatValue;
 }
 
 interface SteppedRangeProps {
@@ -22,19 +27,29 @@ interface SteppedRangeProps {
   rangeValues: number[];
   initialValues?: [number, number];
   editableLabels?: boolean;
+  formatValue?: FormatValue;
 }
 
 type RangeProps = ContinuousRangeProps | SteppedRangeProps;
 
-function buildScale(props: RangeProps): RangeScale {
-  if (props.mode === 'stepped') {
-    return steppedScale(props.rangeValues, props.initialValues);
-  }
-  return continuousScale(props.min, props.max, props.step ?? 1, props.initialValues);
-}
-
 export function Range(props: RangeProps) {
-  const scale = buildScale(props);
+  const { initialValues, formatValue } = props;
+  // Pull the discriminated fields out so the memo closes over primitives (and
+  // stable references) only — the raw `props` object is a new identity each
+  // render and would defeat the memo.
+  const mode = props.mode ?? 'continuous';
+  const rangeValues = props.mode === 'stepped' ? props.rangeValues : undefined;
+  const min = props.mode === 'stepped' ? undefined : props.min;
+  const max = props.mode === 'stepped' ? undefined : props.max;
+  const step = props.mode === 'stepped' ? undefined : props.step;
+
+  const scale = useMemo<RangeScale>(() => {
+    if (mode === 'stepped') {
+      return steppedScale(rangeValues ?? [], initialValues);
+    }
+    return continuousScale(min ?? 0, max ?? 0, step ?? 1, initialValues);
+  }, [mode, rangeValues, min, max, step, initialValues]);
+
   const editableLabels = props.editableLabels ?? scale.editable;
 
   const { trackRef, minValue, maxValue, activeHandle, getHandleProps, setValue } = useRangeDrag({
@@ -67,6 +82,7 @@ export function Range(props: RangeProps) {
         min={lowerBound}
         max={maxDisplay}
         editable={editableLabels}
+        format={formatValue}
         ariaLabel="Minimum value"
         onCommit={(next) => setValue('min', scale.valueToPosition(next))}
       />
@@ -74,6 +90,7 @@ export function Range(props: RangeProps) {
         <RangeHandle
           percent={minPercent}
           value={minDisplay}
+          valueText={formatValue?.(minDisplay)}
           min={lowerBound}
           max={maxDisplay}
           label="Minimum value"
@@ -84,6 +101,7 @@ export function Range(props: RangeProps) {
         <RangeHandle
           percent={maxPercent}
           value={maxDisplay}
+          valueText={formatValue?.(maxDisplay)}
           min={minDisplay}
           max={upperBound}
           label="Maximum value"
@@ -97,6 +115,7 @@ export function Range(props: RangeProps) {
         min={minDisplay}
         max={upperBound}
         editable={editableLabels}
+        format={formatValue}
         ariaLabel="Maximum value"
         onCommit={(next) => setValue('max', scale.valueToPosition(next))}
       />

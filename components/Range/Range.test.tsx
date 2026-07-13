@@ -175,6 +175,38 @@ describe('Range (stepped)', () => {
   });
 });
 
+describe('Range value formatting', () => {
+  const euro = (value: number) => `${value}€`;
+
+  it('formats editable labels and exposes aria-valuetext on the handle', () => {
+    render(<Range min={1} max={100} initialValues={[20, 80]} formatValue={euro} />);
+
+    expect(screen.getByRole('button', { name: 'Minimum value' })).toHaveTextContent('20€');
+    expect(screen.getByRole('button', { name: 'Maximum value' })).toHaveTextContent('80€');
+    expect(screen.getByRole('slider', { name: 'Minimum value' })).toHaveAttribute(
+      'aria-valuetext',
+      '20€',
+    );
+  });
+
+  it('formats read-only stepped labels', () => {
+    render(<Range mode="stepped" rangeValues={[1.99, 70.99]} formatValue={euro} />);
+
+    expect(screen.getByText('1.99€')).toBeInTheDocument();
+    expect(screen.getByText('70.99€')).toBeInTheDocument();
+  });
+
+  it('edits the raw number, not the formatted string', async () => {
+    const user = userEvent.setup();
+    render(<Range min={1} max={100} initialValues={[20, 80]} formatValue={euro} />);
+
+    await user.click(screen.getByRole('button', { name: 'Minimum value' }));
+
+    // the input holds the bare number (20), so the user never edits "20€"
+    expect(screen.getByRole('spinbutton', { name: 'Minimum value' })).toHaveValue(20);
+  });
+});
+
 describe('Range accessibility & keyboard (continuous)', () => {
   function renderRange() {
     render(<Range min={1} max={100} initialValues={[20, 80]} />);
