@@ -14,10 +14,12 @@ pnpm dev
 
 Open [http://localhost:8080](http://localhost:8080).
 
-## Testing
+## Testing & checks
 
 ```bash
-pnpm test
+pnpm test        # Jest + React Testing Library
+pnpm typecheck   # tsc --noEmit
+pnpm lint        # next lint
 ```
 
 ## Key decisions
