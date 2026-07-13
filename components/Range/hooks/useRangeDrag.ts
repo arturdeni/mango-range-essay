@@ -46,6 +46,13 @@ export function useRangeDrag({
 }: UseRangeDragOptions): UseRangeDragResult {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const activeRef = useRef<HandleId | null>(null);
+  // The handle whose DOM element holds the pointer capture. Only this element's
+  // pointermove fires during a drag, but the handle it *moves* (activeRef) can
+  // differ once we resolve an overlapping-handles gesture by direction.
+  const capturedRef = useRef<HandleId | null>(null);
+  // When both handles overlap at pointerdown, we defer picking the active handle
+  // until the first move tells us the drag direction.
+  const pendingStartXRef = useRef<number | null>(null);
   const [activeHandle, setActiveHandle] = useState<HandleId | null>(null);
 
   const [values, setValues] = useState<Values>({
@@ -94,15 +101,42 @@ export function useRangeDrag({
         if (typeof el.setPointerCapture === 'function' && event.pointerId != null) {
           el.setPointerCapture(event.pointerId);
         }
+        capturedRef.current = handle;
+
+        const prev = valuesRef.current;
+        if (prev.minValue === prev.maxValue) {
+          // Handles overlap: the top handle ('max') always receives the click, so
+          // defer the choice — the first move's direction decides which one drags,
+          // letting the buried handle be grabbed at either bound.
+          pendingStartXRef.current = event.clientX;
+          activeRef.current = null;
+          setActiveHandle(null);
+          return;
+        }
+
+        pendingStartXRef.current = null;
         activeRef.current = handle;
         setActiveHandle(handle);
         moveHandle(handle, event.clientX);
       },
       onPointerMove(event) {
-        if (activeRef.current !== handle) return;
-        moveHandle(handle, event.clientX);
+        if (capturedRef.current !== handle) return;
+
+        if (pendingStartXRef.current !== null) {
+          const dx = event.clientX - pendingStartXRef.current;
+          if (dx === 0) return;
+          const resolved: HandleId = dx < 0 ? 'min' : 'max';
+          pendingStartXRef.current = null;
+          activeRef.current = resolved;
+          setActiveHandle(resolved);
+        }
+
+        const active = activeRef.current;
+        if (active === null) return;
+        moveHandle(active, event.clientX);
       },
       onPointerUp(event) {
+        if (capturedRef.current !== handle) return;
         const el = event.currentTarget;
         if (
           typeof el.releasePointerCapture === 'function' &&
@@ -111,6 +145,8 @@ export function useRangeDrag({
         ) {
           el.releasePointerCapture(event.pointerId);
         }
+        capturedRef.current = null;
+        pendingStartXRef.current = null;
         activeRef.current = null;
         setActiveHandle(null);
       },

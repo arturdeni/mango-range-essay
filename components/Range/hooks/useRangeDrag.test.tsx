@@ -13,11 +13,17 @@ function firePointer(el: Element, type: 'pointerdown' | 'pointermove' | 'pointer
   fireEvent(el, event);
 }
 
-function Harness({ onChange }: { onChange?: (values: [number, number]) => void }) {
+function Harness({
+  onChange,
+  initialValues = [1, 100],
+}: {
+  onChange?: (values: [number, number]) => void;
+  initialValues?: [number, number];
+}) {
   const { trackRef, minValue, maxValue, activeHandle, getHandleProps } = useRangeDrag({
     min: 1,
     max: 100,
-    initialValues: [1, 100],
+    initialValues,
     valueFromPercent,
     onChange,
   });
@@ -103,6 +109,34 @@ describe('useRangeDrag', () => {
     // min stays at its initial value (1), max clamped down to it
     expect(screen.getByTestId('max-value')).toHaveTextContent('1');
     expect(screen.getByTestId('min-value')).toHaveTextContent('1');
+  });
+
+  it('reopens the range from the max bound by dragging the buried min handle left', () => {
+    // Both handles sit on the max bound. The top ('max') handle receives the
+    // click, but a leftward first move must grab the buried min handle.
+    render(<Harness initialValues={[100, 100]} />);
+    mockTrackRect();
+    const maxHandle = screen.getByTestId('max-handle');
+
+    firePointer(maxHandle, 'pointerdown', 100);
+    firePointer(maxHandle, 'pointermove', 40);
+
+    expect(screen.getByTestId('active')).toHaveTextContent('min');
+    expect(Number(screen.getByTestId('min-value').textContent)).toBeLessThan(100);
+    expect(screen.getByTestId('max-value')).toHaveTextContent('100');
+  });
+
+  it('reopens the range from the min bound by dragging the max handle right', () => {
+    render(<Harness initialValues={[1, 1]} />);
+    mockTrackRect();
+    const maxHandle = screen.getByTestId('max-handle');
+
+    firePointer(maxHandle, 'pointerdown', 1);
+    firePointer(maxHandle, 'pointermove', 60);
+
+    expect(screen.getByTestId('active')).toHaveTextContent('max');
+    expect(screen.getByTestId('min-value')).toHaveTextContent('1');
+    expect(Number(screen.getByTestId('max-value').textContent)).toBeGreaterThan(1);
   });
 
   it('reports value changes through onChange', () => {
