@@ -9,3 +9,5 @@ coverage
 .env*.local
 next-env.d.ts
 .vercel
+.playwright-mcp
+*.tsbuildinfo
