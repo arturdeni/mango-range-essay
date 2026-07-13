@@ -1,0 +1,91 @@
+.range {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.range__track {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  border-radius: 9999px;
+  background-color: #d4d4d4;
+}
+
+.range__fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: inherit;
+  background-color: #111111;
+}
+
+.range__handle {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #111111;
+  /* translate(-50%, …) centres the handle on its `left` position point */
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  transition: transform 0.12s ease;
+  touch-action: none;
+}
+
+.range__handle:hover {
+  transform: translate(-50%, -50%) scale(1.35);
+}
+
+.range__handle:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 3px;
+}
+
+.range__handle--dragging,
+.range__handle--dragging:hover {
+  cursor: grabbing;
+  transform: translate(-50%, -50%) scale(1.35);
+}
+
+.range__label {
+  font: inherit;
+  min-width: 4ch;
+  padding: 2px 4px;
+  color: #111111;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+button.range__label {
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+button.range__label:hover {
+  background-color: #f0f0f0;
+}
+
+button.range__label:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+.range__label--input {
+  width: 6ch;
+  border: 1px solid #1a73e8;
+  border-radius: 4px;
+  /* keep the native number spinner out; editing is via keyboard */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.range__label--input::-webkit-outer-spin-button,
+.range__label--input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
